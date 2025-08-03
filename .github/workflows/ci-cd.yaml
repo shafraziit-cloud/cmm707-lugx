@@ -33,7 +33,7 @@ jobs:
         docker build -t lugx/analytics-service:latest ./analytics-service
 
     - name: Save Docker Image Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: docker-images
         path: |
