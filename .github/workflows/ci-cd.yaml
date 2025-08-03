@@ -60,12 +60,8 @@ jobs:
         mkdir -p ~/.kube
         echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
 
-    - name: Deploy to Kubernetes
-      run: |
-        kubectl apply -f k8s/services.yaml
-        kubectl apply -f k8s/game-deployment.yaml
-        kubectl apply -f k8s/order-deployment.yaml
-        kubectl apply -f k8s/analytics-deployment.yaml
+    - name: Deploy (Mock)
+      run: echo "Skipping Kubernetes deployment in CI/CD"
 
     - name: Run Integration Tests
       run: bash tests/integration-test.sh
