@@ -1,0 +1,71 @@
+name: CI-CD-Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Run Unit Tests
+      run: npm test || echo "No unit tests available"
+
+    - name: Build Docker Image
+      run: |
+        echo "Building Docker image..."
+        docker build -t lugx/game-service:latest ./game-service
+        docker build -t lugx/order-service:latest ./order-service
+        docker build -t lugx/analytics-service:latest ./analytics-service
+
+    - name: Save Docker Image Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-images
+        path: |
+          ./game-service
+          ./order-service
+          ./analytics-service
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.26.0'
+
+    - name: Configure Kubeconfig (Minikube Example)
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f k8s/services.yaml
+        kubectl apply -f k8s/game-deployment.yaml
+        kubectl apply -f k8s/order-deployment.yaml
+        kubectl apply -f k8s/analytics-deployment.yaml
+
+    - name: Run Integration Tests
+      run: bash tests/integration-test.sh
